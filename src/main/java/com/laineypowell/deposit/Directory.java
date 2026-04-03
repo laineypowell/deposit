@@ -19,11 +19,22 @@ public final class Directory {
 
     public void get(HttpExchange exchange) throws IOException {
 
+        exchange.sendResponseHeaders(404, -1);
     }
 
     public void put(HttpExchange exchange) throws IOException {
         if (basic().compare(exchange)) {
+            var path = this.path.resolve(exchange.getRequestURI().toString().substring(1));
 
+            var parent = path.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
+
+            try (var inputStream = exchange.getRequestBody(); var outputStream = Files.newOutputStream(path)) {
+                inputStream.transferTo(outputStream);
+                outputStream.flush();
+            }
             exchange.sendResponseHeaders(200, -1);
         } else {
             exchange.sendResponseHeaders(401, -1);
@@ -31,9 +42,8 @@ public final class Directory {
     }
 
     public Basic basic() throws IOException {
-        try (var reader = Files.newBufferedReader(path.resolve("credentials.json"))) {
+        try (var reader = Files.newBufferedReader(path.resolve("basic.json"))) {
             return gson.fromJson(reader, Basic.class);
         }
     }
-
 }

@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("com.gradleup.shadow") version "9.4.1"
+    `maven-publish`
 }
 
 group = "com.laineypowell"
@@ -27,4 +28,27 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        register<MavenPublication>("maven") {
+            artifactId = base.archivesName.get()
+            from(components["java"])
+        }
+    }
+
+    repositories {
+        maven {
+            url = uri("http://localhost:8080/public")
+            credentials {
+                username = "test"
+                password = "test"
+            }
+            isAllowInsecureProtocol = true
+            authentication {
+                create("basic", BasicAuthentication::class.java)
+            }
+        }
+    }
 }

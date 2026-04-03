@@ -23,6 +23,7 @@ public final class Deposit implements HttpHandler {
         } else if (method.equalsIgnoreCase(PUT)) {
             directory.put(exchange);
         } else {
+            exchange.getResponseHeaders().add("Allow", "GET, PUT");
             exchange.sendResponseHeaders(405, -1);
         }
     }
