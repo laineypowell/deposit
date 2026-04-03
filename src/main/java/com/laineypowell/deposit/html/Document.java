@@ -8,7 +8,7 @@ public final class Document implements Element {
 
     @Override
     public void append(StringBuilder builder) {
-        builder.append("<!doctype html>\n");
+        builder.append("<!doctype html>");
 
         for (var element : elements) {
             element.append(builder);

@@ -17,13 +17,10 @@ public final class NameElement implements Element {
     @Override
     public void append(StringBuilder builder) {
         builder.append((properties.isEmpty() ? String.format("<%s>", name) : String.format("<%s%s>", name, properties())));
-        if (elements.size() > 1) {
-            builder.append("\n");
-        }
         for (var element : elements) {
             element.append(builder);
         }
-        builder.append(String.format("</%s>\n", name));
+        builder.append(String.format("</%s>", name));
     }
 
     public String properties() {

@@ -11,6 +11,7 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 public final class Directory {
@@ -23,8 +24,16 @@ public final class Directory {
     }
 
     public void get(HttpExchange exchange) throws IOException {
-
-        exchange.sendResponseHeaders(404, -1);
+        var path = this.path.resolve(uri(exchange));
+        if (Files.isDirectory(path)) {
+            list(exchange, path);
+        } else if (Files.isRegularFile(path)) {
+            try (var inputStream = Files.newInputStream(path)) {
+                send(exchange, inputStream.readAllBytes());
+            }
+        } else {
+            exchange.sendResponseHeaders(404, -1);
+        }
     }
 
     public void list(HttpExchange exchange, Path path) throws IOException {
@@ -36,21 +45,26 @@ public final class Directory {
         var body = NameElement.nameElement("body");
         html.add(body);
 
-        var header = NameElement.nameElement("header");
+        var header = NameElement.nameElement("h1");
         body.add(header);
 
-        var uriPath = uri(exchange);
-        header.add(new StringElement(stylised(uriPath)));
+        var uri = uri(exchange);
+        var uriPath = Paths.get(uri);
+
+        header.add(new StringElement(stylised(uri)));
 
         var pre = NameElement.nameElement("pre");
         body.add(pre);
 
+        var parent = uriPath.getParent();
+        if (parent != null) {
+            path(exchange, pre, parent.toString(), stylised(String.format("%s/..", parent)));
+        }
+
         try (var stream = Files.newDirectoryStream(path)) {
             for (var entry : stream) {
-
-                var href = String.format("http://%s/%s", exchange.getRequestHeaders().getFirst("Host"), null);
-                pre.add(new LinkElement(href, entry.getFileName().toString()));
-                pre.add(new StringElement("<br>"));
+                var name = entry.getFileName().toString();
+                path(exchange, pre, uriPath.resolve(name).toString(), name);
             }
         }
 
@@ -58,6 +72,12 @@ public final class Directory {
         document.append(builder);
 
         send(exchange, builder.toString().getBytes());
+    }
+
+    public void path(HttpExchange exchange, NameElement element, String path, String name) {
+        var href = String.format("http://%s/%s", exchange.getRequestHeaders().getFirst("Host"), path);
+        element.add(new LinkElement(href, name));
+        element.add(new StringElement("<br>"));
     }
 
     public void send(HttpExchange exchange, byte[] bytes) throws IOException {
