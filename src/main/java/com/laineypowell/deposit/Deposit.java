@@ -38,6 +38,7 @@ public final class Deposit implements HttpHandler {
             server.stop(1);
         }));
 
+        server.setExecutor(null);
         server.createContext("/", new Deposit());
         server.start();
     }

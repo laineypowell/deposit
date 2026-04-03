@@ -25,6 +25,11 @@ public final class Directory {
 
     public void get(HttpExchange exchange) throws IOException {
         var path = this.path.resolve(uri(exchange));
+        if (shouldIgnore(path)) {
+            exchange.sendResponseHeaders(401, -1);
+            return;
+        }
+
         if (Files.isDirectory(path)) {
             list(exchange, path);
         } else if (Files.isRegularFile(path)) {
@@ -34,6 +39,14 @@ public final class Directory {
         } else {
             exchange.sendResponseHeaders(404, -1);
         }
+    }
+
+    public boolean shouldIgnore(Path path) {
+        var s = this.path.toString();
+        if (Files.isRegularFile(path)) {
+            return path.getParent().toString().equals(s);
+        }
+        return path.toString().equals(s);
     }
 
     public void list(HttpExchange exchange, Path path) throws IOException {
@@ -99,17 +112,21 @@ public final class Directory {
             }
 
             try (var inputStream = exchange.getRequestBody(); var outputStream = Files.newOutputStream(path)) {
-                inputStream.transferTo(outputStream);
-                outputStream.flush();
+                outputStream.write(inputStream.readAllBytes());
+
+                exchange.getResponseHeaders().set("Content-Type", "application/octet-stream");
+                exchange.sendResponseHeaders(200, 0);
+
+                exchange.getResponseBody().close();
             }
-            exchange.sendResponseHeaders(200, -1);
         } else {
             exchange.sendResponseHeaders(401, -1);
         }
     }
 
     public String uri(HttpExchange exchange) {
-        return exchange.getRequestURI().toString().substring(1);
+        var uri = exchange.getRequestURI().toString();
+        return uri.startsWith("/") ? uri.substring(1) : uri;
     }
 
     public String stylised(String s) {
