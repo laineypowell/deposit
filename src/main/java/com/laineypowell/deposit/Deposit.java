@@ -5,14 +5,17 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public final class Deposit implements HttpHandler {
     public static final String GET = "get";
     public static final String PUT = "put";
 
-    private final Directory directory = new Directory(Paths.get("deposit"));
+    public static final Path PATH = Paths.get("deposit");
+    public static final Path JSON = Paths.get("deposit.json");
+
+    private final Directory directory = new Directory(PATH);
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
@@ -28,9 +31,8 @@ public final class Deposit implements HttpHandler {
         }
     }
 
-    public static void start() throws IOException {
-        var address = new InetSocketAddress("localhost", 8080);
-        var server = HttpServer.create(address, -1);
+    public static void start(Host host) throws IOException {
+        var server = HttpServer.create(host.getAddress(), -1);
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             server.stop(1);

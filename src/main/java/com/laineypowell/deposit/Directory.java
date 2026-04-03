@@ -117,7 +117,7 @@ public final class Directory {
     }
 
     public Basic basic() throws IOException {
-        try (var reader = Files.newBufferedReader(path.resolve("basic.json"))) {
+        try (var reader = Files.newBufferedReader(path.resolve(Deposit.JSON))) {
             return gson.fromJson(reader, Basic.class);
         }
     }
